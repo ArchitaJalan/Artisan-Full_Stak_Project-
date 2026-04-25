@@ -1,3 +1,4 @@
+//updated cart
 const express = require('express');
 const pool = require('../db/pool');
 const result = require('../utils/result');
@@ -40,4 +41,3 @@ router.get('/viewCart/:userId', (req, res) => {
 
 
 module.exports = router;
-// cart API file
