@@ -34,6 +34,10 @@ DateTime TIMESTAMP,
 Address VARCHAR(50),
 FOREIGN KEY (userId) REFERENCES user(userId)
 );
+ALTER TABLE Orders ADD COLUMN MobileNo CHAR(10);
+ALTER TABLE Orders MODIFY OrderId INT AUTO_INCREMENT;
+SELECT *FROM Orders;
+
 
 CREATE TABLE Favorites(
 userId INT,

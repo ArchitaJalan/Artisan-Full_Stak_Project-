@@ -1,80 +1,42 @@
 const express = require('express');
 const pool = require('../db/pool');
 const result = require('../utils/result');
-const { checkCustomerAuthorization } = require('../utils/auth');
 
 const router = express.Router();
 
-router.use(checkCustomerAuthorization);
+router.post('/addToCart', (req, res) => {
+    const { userId, ProdId } = req.body;
 
-router.post('/add-to-cart', (req, res) => {
-    const userId = req.user.id; 
-    const { ProdId, ProdImage, price } = req.body;
-
-    const checkSql = `SELECT * FROM cart WHERE UserId=? AND ProdId=?`;
-
-    pool.query(checkSql, [userId, ProdId], (err, data) => {
-        if (err) return res.send(result.createResult(err));
-
-       
-        if (data.length > 0) {
-            const updateSql = `UPDATE cart SET quantity = quantity + 1 WHERE UserId=? AND ProdId=?`;
-
-            pool.query(updateSql, [userId, ProdId], (err2, updateData) => {
-                if (err2) return res.send(result.createResult(err2));
-
-                return res.send({
-                    status: 'success',
-                    message: 'Quantity updated in cart',
-                    data: updateData
-                });
-            });
-        } 
-       
-        else {
-            const insertSql = `
-                INSERT INTO cart(UserId, ProdId, ProdImage, price, quantity)
-                VALUES (?, ?, ?, ?, 1)
-            `;
-
-            pool.query(insertSql, [userId, ProdId, ProdImage, price], (err3, insertData) => {
-                if (err3) return res.send(result.createResult(err3));
-
-                return res.send({
-                    status: 'success',
-                    message: 'Product added to cart',
-                    data: insertData
-                });
-            });
-        }
-    });
-});
-
-router.get('/view-cart', (req, res) => {
-    const userId = req.user.id; 
+    if (!userId || !ProdId) {
+        res.send(result.createResult('All fields are required', null));
+        return;
+    }
 
     const sql = `
-        SELECT CartId, ProdId, ProdImage, price
-        FROM cart
-        WHERE UserId = ?
+        INSERT INTO Cart (userId, ProdId)
+        VALUES (?, ?)
     `;
 
-    pool.query(sql, [userId], (err, data) => {
-        if (err) return res.send(result.createResult(err));
-
-        let totalAmount = 0;
-
-        data.forEach(item => {
-            totalAmount += item.price * item.quantity;
-        });
-
-        return res.send({
-            status: 'success',
-            totalItems: data.length,
-            totalAmount: totalAmount,
-            cartItems: data
-        });
+    pool.query(sql, [userId, ProdId], (error, data) => {
+        res.send(result.createResult(error, data));
     });
 });
+
+router.get('/viewCart/:userId', (req, res) => {
+    const userId = req.params.userId;
+
+    const sql = `
+        SELECT c.ProdId, p.ProdName, p.Price, p.ProdImage
+        FROM Cart c
+        JOIN Product p ON c.ProdId = p.ProdId
+        WHERE c.userId = ?
+    `;
+
+    pool.query(sql, [userId], (error, data) => {
+        console.log("view cart");
+        res.send(result.createResult(error, data));
+    });
+});
+
 
 module.exports = router;
